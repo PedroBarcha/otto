@@ -9,7 +9,7 @@ record.record()
 #send the audio to the ibm speech-to-text api and get their json response
 transcript=speech_to_text.stt()
 
-#pass the transcript to the tone analyzer api, which recognizes emotions
+#use otto-lexicon and ibm tone-analyzer to get the emotion
 emotion=tone_analyzer.getPredominantEmotion(transcript)
 
 output.sound(emotion)
