@@ -1,17 +1,28 @@
-#pass the transcript to the tone analyzer, which recognizes emotions;
-#return predominat emotion
-
-from __future__ import print_function
 import json
 from watson_developer_cloud import ToneAnalyzerV3
 from io import StringIO
+
+lexicon="/home/anshee/Documents/projects/otto/lexica/otto-lexicon.txt"
 
 tone_analyzer = ToneAnalyzerV3(
     username="065ec1b0-10a0-468d-a59f-3608faceecbf",
     password="fpAryMaxXfr2",
     version="2016-05-19")
 
-def getPredominantEmotion(transcript):
+#the words contained in otto-lexicon.txt are high-priority and have assigned #emotions. they must be checked before using the IBM tone analyer
+def lexiconCheck(transcript):
+	str_transcript=transcript.split()	
+
+	#if the lexicon contains a word in the transcript, return the assigned #emotion
+	with open(lexicon) as f:
+		for line in f:
+			word=line.split()
+			if (word[0] in str_transcript):
+				print ("LEXICON WORD FOUND: "+word[0])
+				return word[1]
+
+#ibm watson-tone-analyer api
+def watsonToneAnalyzer(transcript):
 	tone_raw_json = StringIO()
 	json.dump(tone_analyzer.tone(tone_input=transcript, content_type="text/plain"), tone_raw_json)
 
@@ -27,6 +38,15 @@ def getPredominantEmotion(transcript):
 		if (aux_score>score):
 			score=aux_score
 			emotion=aux_emotion
-
-	print ("\nPREDOMINANT EMOTION: "+emotion+'\n')
 	return emotion
+
+#first try the lexicon, if no word of it was used then use the ibm api
+def getPredominantEmotion(transcript):
+	emotion=lexiconCheck(transcript)
+	if(emotion):
+		print ("PREDOMINANT EMOTION: "+emotion+'\n')
+		return emotion
+	else:
+		emotion=watsonToneAnalyzer(transcript)
+		print ("\nPREDOMINANT EMOTION: "+emotion+'\n')
+		return emotion
