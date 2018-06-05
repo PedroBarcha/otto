@@ -5,7 +5,7 @@ from lib import record, speech_to_text, tone_analyzer, output
 import time
 
 #record what user has to say and save to ./records/user-record.wav
-record.record()
+record.detectVoice()
 t1=time.time()
 
 #send the audio to the ibm speech-to-text api and get their json response
