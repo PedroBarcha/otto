@@ -3,6 +3,7 @@ import wave
 import time
 import audioop
 import numpy
+import thread
 import threading
 
 
@@ -10,9 +11,10 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100*2
 CHUNK = 1024
-RECORD_SECONDS = 2
-WAVE_OUTPUT_FILENAME = "records/user.wav"
+RECORD_SECONDS = 5
+WAVE_OUTPUT_FILENAME = "/home/rax/Desktop/AirLab/otto/records/samples/user.wav"
 flag2=0
+
 threadLock = threading.Lock()
 threads = []
  
@@ -28,10 +30,10 @@ def set_trs(stream):
 	print ("max noise value : " + str(max_noise))
 	return max_noise
 
+
 def record():
 	frames = []
 	audio = pyaudio.PyAudio()
-	print("cccccccccccccccccccccccccccccccc")
 
 	# start Recording
 	stream = audio.open(format=FORMAT, channels=CHANNELS,
@@ -39,35 +41,32 @@ def record():
 	                frames_per_buffer=CHUNK)
 
 	while(flag2==0):
-		print("flag2"+str(flag2))
+		print("flag2222 : " + str(flag2))
 		for i in range(0, int(RATE/CHUNK)):
 			data = stream.read(CHUNK)
 			frames.append(data)
-
 	stream.stop_stream()
 	stream.close()
 	audio.terminate()
 
-	print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	waveFile = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
 	waveFile.setnchannels(CHANNELS)
 	waveFile.setsampwidth(audio.get_sample_size(FORMAT))
 	waveFile.setframerate(RATE)
 	waveFile.writeframes(b''.join(frames))
 	waveFile.close()
-	print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-
 
 
 
 def detectVoice():
+	global flag2
 	class myThread(threading.Thread):
 		def __init__(self):
 			threading.Thread.__init__(self)
 		def run(self):
- 			record()
+			global flag2
+	 		record()
 
-	
 	audio1 = pyaudio.PyAudio()
 	# start Recording
 	stream1 = audio1.open(format=FORMAT, channels=CHANNELS,
@@ -85,24 +84,29 @@ def detectVoice():
 		if( audioop.rms(stream1.read(CHUNK),2) > THRESHOLD ):
 			myThread = myThread()
 			myThread.start()
-			print ("START RECORDING")
+			print "START RECORDING"
 			break
 
 
 	while(flag == 0):
 		if( audioop.rms(stream1.read(CHUNK),2) > THRESHOLD ): 
-			print ("RECORDING..")
+			print "RECORDING.."
 		else:
 			t1=time.time()
 			while (audioop.rms(stream1.read(CHUNK),2) <= THRESHOLD ):
-				print ("RECORDING SILENCE..")
+				print "RECORDING SILENCE.."
 				if (time.time()-t1 > 1 ):
-					print ("STOP")
+					print "STOP"
 					flag=1
 					flag2=1
-					print (flag2)
+					print("flag2 : " + str(flag2))
 					break
 	for t in threads:
 		t.join()
-	#threadLock = threading.Unlock()
-	print ("Exiting Main Thread")
+	print "Exiting Main Thread"
+
+
+
+
+
+
