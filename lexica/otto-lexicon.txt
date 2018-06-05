@@ -3,3 +3,7 @@ fisher fear
 paeja fear
 pareja fear
 paella fear
+plastic disgust
+restaurant fear
+salad fear
+aquarium fear
