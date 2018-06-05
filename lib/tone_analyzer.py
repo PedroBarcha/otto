@@ -27,6 +27,7 @@ def watsonToneAnalyzer(transcript):
 	json.dump(tone_analyzer.tone(tone_input=transcript, content_type="text/plain"), tone_raw_json)
 
 	#extract the emotions out of the json
+	emotion="joy"
 	score=0
 	tone_str_json=(json.loads(tone_raw_json.getvalue()))
 	for i in range (0,5):
@@ -38,6 +39,7 @@ def watsonToneAnalyzer(transcript):
 		if (aux_score>score):
 			score=aux_score
 			emotion=aux_emotion
+	
 	return emotion
 
 #first try the lexicon, if no word of it was used then use the ibm api

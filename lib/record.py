@@ -1,7 +1,7 @@
 import pyaudio
 import wave
  
-FORMAT=pyaudio.paInt16
+FORMAT=pyaudio.paInt8
 CHANNELS=1
 RATE=44100*2
 CHUNK=1024

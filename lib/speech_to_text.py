@@ -5,7 +5,6 @@ from io import StringIO
 import json
 from os.path import join, dirname
 from watson_developer_cloud import SpeechToTextV1
-import time
 
 #full path to the user record
 audio_path="/home/anshee/Documents/projects/otto/records/user.wav"
@@ -18,9 +17,7 @@ speech_to_text = SpeechToTextV1(
 def stt():
 	stt_raw_json = StringIO() #stt=speech-to-text
 	with open(join(dirname(__file__), audio_path),'rb') as audio_file:
-		stime=time.time()
-		json.dump(speech_to_text.recognize(audio=audio_file, content_type='audio/wav'), stt_raw_json)
-		print(time.time()-stime)
+		json.dump(speech_to_text.recognize(audio=audio_file, content_type='audio/ogg'), stt_raw_json)
 
 	#extract the transcript out of the json
 	stt_str_json=(json.loads(stt_raw_json.getvalue()))
