@@ -3,31 +3,37 @@ import wave
 import time
 import audioop
 import numpy
-import thread
 import threading
 
-
+#audio variables
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100*2
 CHUNK = 1024
-RECORD_SECONDS = 5
-WAVE_OUTPUT_FILENAME = "/home/rax/Desktop/AirLab/otto/records/samples/user.wav"
-flag2=0
+WAVE_OUTPUT_FILENAME = "/home/anshee/Documents/projects/otto/records/user.wav"
 
-threadLock = threading.Lock()
-threads = []
- 
+silence_estimation_time=3
+silence_threshold_factor=1.4
+allowed_silence_time=0.6
+
+user_speaking=0
+
+
+#calculate ambient noise (silence)
 def set_trs(stream):
 	max_noise = 0
 	volumes = []
+
+	#get input volume during silence_estimation_time seconds
+	print("\nEstimating ambient noise, please wait SILENTLY... ")
 	t=time.time()
-	while((time.time()-t<5)):
+	while((time.time()-t<silence_estimation_time)):
 		current_volume=audioop.rms(stream.read(CHUNK), 2)
 		volumes.append(current_volume)
-		print("noise : " + str(current_volume))
+
 	max_noise = max(volumes)
-	print ("max noise value : " + str(max_noise))
+	print ("Microphone ready!")
+
 	return max_noise
 
 
@@ -40,15 +46,18 @@ def record():
 	                rate=RATE, input=True,
 	                frames_per_buffer=CHUNK)
 
-	while(flag2==0):
-		print("flag2222 : " + str(flag2))
+	#record while the user is still speaking
+	while(user_speaking):
 		for i in range(0, int(RATE/CHUNK)):
 			data = stream.read(CHUNK)
 			frames.append(data)
+
+	#stop recording
 	stream.stop_stream()
 	stream.close()
 	audio.terminate()
 
+	#save audio file
 	waveFile = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
 	waveFile.setnchannels(CHANNELS)
 	waveFile.setsampwidth(audio.get_sample_size(FORMAT))
@@ -59,51 +68,47 @@ def record():
 
 
 def detectVoice():
-	global flag2
+	global user_speaking
+
+	#set recording variables
+	audio = pyaudio.PyAudio()
+	stream1 = audio.open(format=FORMAT, channels=CHANNELS,
+		                rate=RATE, input=True,
+		                frames_per_buffer=CHUNK)
+	
+	#set record thread
 	class myThread(threading.Thread):
 		def __init__(self):
 			threading.Thread.__init__(self)
 		def run(self):
-			global flag2
-	 		record()
+			record()
+	
+	#calculate silence threshold
+	silence_threshold=set_trs(stream1)
+	silence_threshold=silence_threshold*silence_threshold_factor
 
-	audio1 = pyaudio.PyAudio()
-	# start Recording
-	stream1 = audio1.open(format=FORMAT, channels=CHANNELS,
-		                rate=RATE, input=True,
-		                frames_per_buffer=CHUNK)
-
-	 
-
-
-	THRESHOLD=set_trs(stream1)
-	THRESHOLD=1.4*THRESHOLD
-	flag=0
-
+	#keep checking if the silence threshold is exceeded (some on is talking to #otto). when it happens, start recording (in a new thread)
 	while (1):
-		if( audioop.rms(stream1.read(CHUNK),2) > THRESHOLD ):
-			myThread = myThread()
+		if(audioop.rms(stream1.read(CHUNK),2)>silence_threshold):
+			user_speaking=1
+			myThread=myThread()
 			myThread.start()
-			print "START RECORDING"
+			print("RECORDING...")
 			break
 
+	#record while there is no silence for more than allowed_silence_time
+	flag=1
+	while(flag):
+		t=time.time()
+		while (audioop.rms(stream1.read(CHUNK),2)<=silence_threshold):
+			if (time.time()-t > allowed_silence_time ):
+				flag=0
+				user_speaking=0
+				print("FINISHED RECORDING.")
+				break
 
-	while(flag == 0):
-		if( audioop.rms(stream1.read(CHUNK),2) > THRESHOLD ): 
-			print "RECORDING.."
-		else:
-			t1=time.time()
-			while (audioop.rms(stream1.read(CHUNK),2) <= THRESHOLD ):
-				print "RECORDING SILENCE.."
-				if (time.time()-t1 > 1 ):
-					print "STOP"
-					flag=1
-					flag2=1
-					print("flag2 : " + str(flag2))
-					break
-	for t in threads:
-		t.join()
-	print "Exiting Main Thread"
+	#wait for recording file to be saved			
+	myThread.join()
 
 
 

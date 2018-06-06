@@ -3,7 +3,7 @@
 import vlc
 import time
 
-sounds_path="/home/rax/Desktop/AirLab/otto/sounds/"
+sounds_path="/home/anshee/Documents/projects/otto/sounds/"
 
 #otto makes a different sound according to the emotion recognized
 def sound(emotion):

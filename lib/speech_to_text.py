@@ -7,7 +7,7 @@ from os.path import join, dirname
 from watson_developer_cloud import SpeechToTextV1
 
 #full path to the user record
-audio_path="/home/rax/Desktop/AirLab/otto/records/samples/user.wav"
+audio_path="/home/anshee/Documents/projects/otto/records/user.wav"
 
 speech_to_text = SpeechToTextV1(
     	username="87bc7b23-450f-4070-94e4-359ffa926bb7",
@@ -16,6 +16,8 @@ speech_to_text = SpeechToTextV1(
 
 def stt():
 	stt_raw_json = StringIO() #stt=speech-to-text
+
+	print("Transcribing the audio...")
 	with open(join(dirname(__file__), audio_path),'rb') as audio_file:
 		json.dump(speech_to_text.recognize(audio=audio_file, content_type='audio/wav'), stt_raw_json)
 
@@ -23,4 +25,5 @@ def stt():
 	stt_str_json=(json.loads(stt_raw_json.getvalue()))
 	transcript=stt_str_json["results"][0]["alternatives"][0]["transcript"]
 	print ("\nTRANSCRIPTION: "+transcript+"\n")
+
 	return transcript
