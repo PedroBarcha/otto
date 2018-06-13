@@ -2,8 +2,9 @@
 
 import vlc
 import time
+import os
 
-sounds_path="/home/anshee/Documents/projects/otto/sounds/"
+sounds_path= '/home/pi/Desktop/speech_recognition2/otto/sounds/'
 
 #otto makes a different sound according to the emotion recognized
 def sound(emotion):

@@ -3,115 +3,126 @@ import wave
 import time
 import audioop
 import numpy
-import threading
+import threading, Queue
+import os
+import time
 
 #audio variables
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-RATE = 44100*2
+RATE = 44100
 CHUNK = 1024
-WAVE_OUTPUT_FILENAME = "/home/anshee/Documents/projects/otto/records/user.wav"
+WAVE_OUTPUT_FILENAME = '/home/pi/Desktop/speech_recognition2/otto/records/user.wav'
 
 silence_estimation_time=3
 silence_threshold_factor=1.4
 allowed_silence_time=0.6
 
-user_speaking=0
-
 
 #calculate ambient noise (silence)
-def set_trs(stream):
-	max_noise = 0
-	volumes = []
-
-	#get input volume during silence_estimation_time seconds
-	print("\nEstimating ambient noise, please wait SILENTLY... ")
-	t=time.time()
-	while((time.time()-t<silence_estimation_time)):
-		current_volume=audioop.rms(stream.read(CHUNK), 2)
-		volumes.append(current_volume)
-
-	max_noise = max(volumes)
-	print ("Microphone ready!")
-
-	return max_noise
-
-
-def record():
-	frames = []
-	audio = pyaudio.PyAudio()
-
-	# start Recording
-	stream = audio.open(format=FORMAT, channels=CHANNELS,
-	                rate=RATE, input=True,
-	                frames_per_buffer=CHUNK)
-
-	#record while the user is still speaking
-	while(user_speaking):
-		for i in range(0, int(RATE/CHUNK)):
-			data = stream.read(CHUNK)
-			frames.append(data)
-
-	#stop recording
-	stream.stop_stream()
-	stream.close()
-	audio.terminate()
-
-	#save audio file
-	waveFile = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-	waveFile.setnchannels(CHANNELS)
-	waveFile.setsampwidth(audio.get_sample_size(FORMAT))
-	waveFile.setframerate(RATE)
-	waveFile.writeframes(b''.join(frames))
-	waveFile.close()
-
-
-
-def detectVoice():
-	global user_speaking
-
-	#set recording variables
-	audio = pyaudio.PyAudio()
-	stream1 = audio.open(format=FORMAT, channels=CHANNELS,
+def get_trs():
+    max_noise = 0
+    volumes = []
+	
+    #set recording variables
+    audio = pyaudio.PyAudio()
+    stream = audio.open(format=FORMAT, channels=CHANNELS,
 		                rate=RATE, input=True,
 		                frames_per_buffer=CHUNK)
 	
-	#set record thread
-	class myThread(threading.Thread):
-		def __init__(self):
-			threading.Thread.__init__(self)
-		def run(self):
-			record()
+    #get input volume during silence_estimation_time seconds
+    print("\nEstimating ambient noise, please wait SILENTLY... ")
+    t=time.time()
+    while((time.time()-t<silence_estimation_time)):
+	current_volume=audioop.rms(stream.read(CHUNK, exception_on_overflow =False), 2)
+	volumes.append(current_volume)
+
+    max_noise = max(volumes)
+    silence_threshold=max_noise*silence_threshold_factor
+
+    #stop recording
+    stream.stop_stream()
+    stream.close()
+    audio.terminate()
+        
+    return silence_threshold
+
+
+def record(data_shared, flag_shared):                      #set recording variables
+    audio = pyaudio.PyAudio()
+    frames = []
+    # start Recording
+    stream = audio.open(format=FORMAT, channels=CHANNELS,
+                    rate=RATE, input=True,
+                    frames_per_buffer=CHUNK)
+
+    #record while the user is still speaking
+    flag=1
+    while(flag):
+            for i in range(0, int(RATE/CHUNK)):
+                data = stream.read(CHUNK, exception_on_overflow =False)
+                frames.append(data)
+                data_shared.put(data)
+                flag = flag_shared.get() 
+                if(flag == 0):
+                    break
+            
+    #stop recording
+    stream.stop_stream()
+    stream.close()
+    audio.terminate()
+
+    #save audio file
+    waveFile = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+    waveFile.setnchannels(CHANNELS)
+    waveFile.setsampwidth(audio.get_sample_size(FORMAT))
+    waveFile.setframerate(RATE)
+    waveFile.writeframes(b''.join(frames))
+    waveFile.close()
+
+
+def detectVoice(silence_threshold):
+    #set threads
+    data_shared = Queue.Queue()
+    flag_shared = Queue.Queue()
+    flag_shared.put(1)
+
+    #set recording variables
+    audio = pyaudio.PyAudio()
+    stream = audio.open(format=FORMAT, channels=CHANNELS,
+		                rate=RATE, input=True,
+		                frames_per_buffer=CHUNK)
+    
+    #keep checking if the silence threshold is exceeded (some on is talking to otto). when it happens, start recording (in a new thread)
+    print ("Microphone ready!")
+    while (1):
+	    if(audioop.rms(stream.read(CHUNK,exception_on_overflow =False),2)>silence_threshold):
+		    user_speaking=1
+		    stream.stop_stream()
+                    stream.close()
+		    audio.terminate()
+		    myThread=threading.Thread(target=record, args=(data_shared,flag_shared))
+		    myThread.start()
+		    break
+
+    #record while there is no silence for more than allowed_silence_time
+    user_speaking=1
+    print("RECORDING")
 	
-	#calculate silence threshold
-	silence_threshold=set_trs(stream1)
-	silence_threshold=silence_threshold*silence_threshold_factor
+    while(user_speaking):
+            flag_shared.put(1)
+            data=data_shared.get()
+	    t=time.time()
+	    i=0
+	    while (audioop.rms(data,2) <= silence_threshold):
+                    i=i+1
+		    if (time.time()-t > allowed_silence_time ):
+                            print(" RECORDING FINSHED")
+			    flag_shared.put(0)
+			    user_speaking=0
+			    break
+		    flag_shared.put(1)
+		    data=data_shared.get()
 
-	#keep checking if the silence threshold is exceeded (some on is talking to #otto). when it happens, start recording (in a new thread)
-	while (1):
-		if(audioop.rms(stream1.read(CHUNK),2)>silence_threshold):
-			user_speaking=1
-			myThread=myThread()
-			myThread.start()
-			print("RECORDING...")
-			break
-
-	#record while there is no silence for more than allowed_silence_time
-	flag=1
-	while(flag):
-		t=time.time()
-		while (audioop.rms(stream1.read(CHUNK),2)<=silence_threshold):
-			if (time.time()-t > allowed_silence_time ):
-				flag=0
-				user_speaking=0
-				print("FINISHED RECORDING.")
-				break
-
-	#wait for recording file to be saved			
-	myThread.join()
-
-
-
-
-
-
+    #wait for recording file to be saved
+    myThread.join()
