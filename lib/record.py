@@ -18,7 +18,6 @@ silence_estimation_time=3
 silence_threshold_factor=1.4
 allowed_silence_time=0.6
 
-
 #calculate ambient noise (silence)
 def get_trs():
     max_noise = 0
@@ -48,7 +47,8 @@ def get_trs():
     return silence_threshold
 
 
-def record(data_shared, flag_shared):                      #set recording variables
+def record(data_shared, flag_shared):
+    #set recording variables
     audio = pyaudio.PyAudio()
     frames = []
     # start Recording
@@ -107,8 +107,7 @@ def detectVoice(silence_threshold):
 
     #record while there is no silence for more than allowed_silence_time
     user_speaking=1
-    print("RECORDING")
-	
+    print("RECORDING")	
     while(user_speaking):
             flag_shared.put(1)
             data=data_shared.get()
