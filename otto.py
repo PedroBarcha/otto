@@ -8,17 +8,17 @@ import sys
 #calculate ambient silence threshold
 silence_threshold=record.get_trs()
 
+#display default eyes
+on=Queue.Queue()
+on.put(True)
+default_eyes_thr=threading.Thread(target=eyes.defaultEyes, args=(on,))
+default_eyes_thr.start()
+
 while (1):
     try:
-        #display default eyes
-        on=Queue.Queue()
-        on.put(True)
-        default_eyes_thr=threading.Thread(target=eyes.defaultEyes, args=(on,))
-        default_eyes_thr.start()
-
         #record what user has to say and save to ./records/user-record.wav
         record.detectVoice(silence_threshold)
-        print ("nois nem ta aqui")
+
         #send the audio to the ibm speech-to-text api and get their json response
         transcript=speech_to_text.stt()
         #if noise was recorded, record again
@@ -31,10 +31,9 @@ while (1):
         #otto's sound reaction
         output.sound(emotion)
 
+    #terminate threads when keyboard interrupts occur
     except(KeyboardInterrupt, SystemExit):
         print("Wrapping threads up...")
         on.put(False)
         default_eyes_thr.join()
-        print("Almoost...")
         sys.exit()
-        print("Terminated")

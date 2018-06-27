@@ -52,4 +52,4 @@ def getPredominantEmotion(transcript):
 	else:
 		emotion=watsonToneAnalyzer(transcript)
 		print ("\nPREDOMINANT EMOTION: "+emotion+'\n')
-return emotion
+	return emotion
