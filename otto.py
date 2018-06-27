@@ -13,13 +13,12 @@ while (1):
         #display default eyes
         on=Queue.Queue()
         on.put(True)
-        coco=True
         default_eyes_thr=threading.Thread(target=eyes.defaultEyes, args=(on,))
         default_eyes_thr.start()
 
         #record what user has to say and save to ./records/user-record.wav
         record.detectVoice(silence_threshold)
-
+        print ("nois nem ta aqui")
         #send the audio to the ibm speech-to-text api and get their json response
         transcript=speech_to_text.stt()
         #if noise was recorded, record again
@@ -35,4 +34,7 @@ while (1):
     except(KeyboardInterrupt, SystemExit):
         print("Wrapping threads up...")
         on.put(False)
+        default_eyes_thr.join()
+        print("Almoost...")
         sys.exit()
+        print("Terminated")

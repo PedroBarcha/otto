@@ -6,6 +6,7 @@ import numpy
 import threading, Queue
 import os
 import time
+import sys
 
 #audio variables
 FORMAT = pyaudio.paInt16
@@ -92,36 +93,44 @@ def detectVoice(silence_threshold):
     stream = audio.open(format=FORMAT, channels=CHANNELS,
 		                rate=RATE, input=True,
 		                frames_per_buffer=CHUNK)
-    
-    #keep checking if the silence threshold is exceeded (some on is talking to otto). when it happens, start recording (in a new thread)
-    print ("Microphone ready!")
-    while (1):
-	    if(audioop.rms(stream.read(CHUNK,exception_on_overflow =False),2)>silence_threshold):
-		    user_speaking=1
-		    stream.stop_stream()
-                    stream.close()
-		    audio.terminate()
-		    myThread=threading.Thread(target=record, args=(data_shared,flag_shared))
-		    myThread.start()
-		    break
 
-    #record while there is no silence for more than allowed_silence_time
-    user_speaking=1
-    print("RECORDING")	
-    while(user_speaking):
+    try:
+        #keep checking if the silence threshold is exceeded (some on is talking to otto). when it happens, start recording (in a new thread)
+        print ("Microphone ready!")
+        while (1):
+	    if(audioop.rms(stream.read(CHUNK,exception_on_overflow =False),2)>silence_threshold):
+                user_speaking=1
+                stream.stop_stream()
+                stream.close()
+                audio.terminate()
+                break
+
+    	#record while there is no silence for more than allowed_silence_time
+        myThread=threading.Thread(target=record, args=(data_shared,flag_shared))
+        myThread.start()
+
+    	user_speaking=1
+    	print("RECORDING")
+        while(user_speaking):
             flag_shared.put(1)
             data=data_shared.get()
-	    t=time.time()
-	    i=0
-	    while (audioop.rms(data,2) <= silence_threshold):
-                    i=i+1
-		    if (time.time()-t > allowed_silence_time ):
-                            print(" RECORDING FINSHED")
-			    flag_shared.put(0)
-			    user_speaking=0
-			    break
-		    flag_shared.put(1)
-		    data=data_shared.get()
+            t=time.time()
+            i=0
+            while (audioop.rms(data,2) <= silence_threshold):
+                i=i+1
+                if (time.time()-t > allowed_silence_time ):
+                    print("RECORDING FINSHED")
+                    flag_shared.put(0)
+                    user_speaking=0
+                    break
+                flag_shared.put(1)
+                data=data_shared.get()
 
-    #wait for recording file to be saved
-    myThread.join()
+        #wait for recording file to be saved
+        myThread.join()
+
+    except(KeyboardInterrupt, SystemExit):
+        print("Wrapping recording threads up...")
+        flag_shared.put(False)
+        sys.exit()
+
