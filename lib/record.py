@@ -11,12 +11,12 @@ import time
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-CHUNK = 1024
+CHUNK = 1024*4
 WAVE_OUTPUT_FILENAME = '/home/pi/Desktop/speech_recognition2/otto/records/user.wav'
 
 silence_estimation_time=3
-silence_threshold_factor=1.4
-allowed_silence_time=0.6
+silence_threshold_factor=1.2
+allowed_silence_time=1.2
 
 #calculate ambient noise (silence)
 def get_trs():
