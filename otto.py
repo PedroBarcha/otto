@@ -8,7 +8,7 @@ import sys
 #calculate ambient silence threshold
 silence_threshold=record.get_trs()
 
-#display default eyes
+#set eyes thread/display default eyes
 eyes_emotion=Queue.Queue()
 eyes_emotion.put("neutral")
 eyes_on=Queue.Queue()
@@ -18,7 +18,7 @@ eyes_thr.start()
 
 while (1):
     try:
-        #record what user has to say and save to ./records/user-record.wav
+        #record what the user has to say and save to ./records/user-record.wav
         record.detectVoice(silence_threshold)
 
         #send the audio to the ibm speech-to-text api and get their json response
@@ -29,17 +29,21 @@ while (1):
 
         #use otto-lexicon and ibm tone-analyzer to get the emotion
         emotion=tone_analyzer.getPredominantEmotion(transcript)
+
+	#otto reacts with his eyes
 	eyes_emotion.put(emotion)
-	print("RESTARTANDO THREAD")
-	eyes_emotion.put_nowait(emotion)
-	print("TAMO VORTANDO AQUI")
+	eyes_on.put(True)
 
         #otto's sound reaction
         output.sound(emotion)
 
+	#get back to default eyes state
+	eyes_emotion.put("neutral")
+        eyes_on.put(True)
+
     #terminate threads when keyboard interrupts occur
     except(KeyboardInterrupt, SystemExit):
-        print("Wrapping threads up...")
+        print("Wrapping eyes threads up...")
         eyes_on.put(False)
         eyes_thr.join()
         sys.exit()

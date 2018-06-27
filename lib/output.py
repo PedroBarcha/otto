@@ -10,7 +10,7 @@ sounds_path= '/home/pi/Desktop/otto/sounds/'
 def sound(emotion):
 	p = vlc.MediaPlayer(sounds_path+emotion.lower()+".mp3")
 	p.play()
-	time.sleep(3) #necessary otherwise the whole sound might not be played
+	time.sleep(4) #necessary otherwise the whole sound might not be played
 
 ###################################
 #other kinds of outputs go here too
