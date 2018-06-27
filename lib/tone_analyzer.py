@@ -3,7 +3,7 @@ from watson_developer_cloud import ToneAnalyzerV3
 from io import StringIO
 import os
 
-lexicon='/home/pi/Desktop/speech_recognition2/otto/lexica/otto-lexicon.txt'
+lexicon='/home/pi/Desktop/otto/lexica/otto-lexicon.txt'
 
 tone_analyzer = ToneAnalyzerV3(
     username="065ec1b0-10a0-468d-a59f-3608faceecbf",

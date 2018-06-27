@@ -9,10 +9,12 @@ import sys
 silence_threshold=record.get_trs()
 
 #display default eyes
-on=Queue.Queue()
-on.put(True)
-default_eyes_thr=threading.Thread(target=eyes.defaultEyes, args=(on,))
-default_eyes_thr.start()
+eyes_emotion=Queue.Queue()
+eyes_emotion.put("neutral")
+eyes_on=Queue.Queue()
+eyes_on.put(True)
+eyes_thr=threading.Thread(target=eyes.displayEyes, args=(eyes_on, eyes_emotion))
+eyes_thr.start()
 
 while (1):
     try:
@@ -27,6 +29,10 @@ while (1):
 
         #use otto-lexicon and ibm tone-analyzer to get the emotion
         emotion=tone_analyzer.getPredominantEmotion(transcript)
+	eyes_emotion.put(emotion)
+	print("RESTARTANDO THREAD")
+	eyes_emotion.put_nowait(emotion)
+	print("TAMO VORTANDO AQUI")
 
         #otto's sound reaction
         output.sound(emotion)
@@ -34,6 +40,6 @@ while (1):
     #terminate threads when keyboard interrupts occur
     except(KeyboardInterrupt, SystemExit):
         print("Wrapping threads up...")
-        on.put(False)
-        default_eyes_thr.join()
+        eyes_on.put(False)
+        eyes_thr.join()
         sys.exit()

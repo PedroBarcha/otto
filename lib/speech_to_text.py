@@ -8,7 +8,7 @@ from watson_developer_cloud import SpeechToTextV1
 import os
 
 #full path to the user record
-audio_path='/home/pi/Desktop/speech_recognition2/otto/records/user.wav'
+audio_path='/home/pi/Desktop/otto/records/user.wav'
 
 speech_to_text = SpeechToTextV1(
     	username="87bc7b23-450f-4070-94e4-359ffa926bb7",
