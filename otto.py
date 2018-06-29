@@ -21,11 +21,11 @@ eyes_thr.start()
 #set camera thread
 #NOTE: -this thread on/off is triggered with a camera_stop.put(bool)
 camera_stop=Queue.Queue()
-camera_thr=threading.Thread(target=camera.detectFaces, args=(camera_stop, ))
+camera_emotion=Queue.Queue()
+camera_thr=threading.Thread(target=camera.detectFaces, args=(camera_stop, camera_emotion))
 camera_thr.start()
 
-coco=Queue.Queue()
-coco.put(True)
+
 
 while (1):
     try:
@@ -33,18 +33,24 @@ while (1):
         camera_stop.put(False)
                 
         #record what the user has to say and save to ./records/user-record.wav
-        record.detectVoice(silence_threshold,coco)
+        record.detectVoice(silence_threshold, camera_emotion)
         
         camera_stop.put(False)
 
-        #send the audio to the ibm speech-to-text api and get their json response
-        transcript=speech_to_text.stt()
-        #if noise was recorded, record again
-        if (transcript == False): 
-            continue
+        #if camera got emotion
+        if (not camera_emotion.empty()):
+            emotion=camera_emotion.get()
 
-        #use otto-lexicon and ibm tone-analyzer to get the emotion
-        emotion=tone_analyzer.getPredominantEmotion(transcript)
+        #if the microphone got emotion
+        else:
+            #send the audio to the ibm speech-to-text api and get their json response
+            transcript=speech_to_text.stt()
+            #if noise was recorded, record again
+            if (transcript == False): 
+                continue
+
+            #use otto-lexicon and ibm tone-analyzer to get the emotion
+            emotion=tone_analyzer.getPredominantEmotion(transcript)
 
 	#otto reacts with his eyes
 	eyes_emotion.put(emotion)

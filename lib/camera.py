@@ -9,7 +9,7 @@ import imutils
 cascPath1 = '/home/pi/Desktop/otto/face-models/haarcascade_frontalface_default.xml'
 cascPath2= '/home/pi/Desktop/otto/face-models/haarcascade_profileface.xml'
 
-def detectFaces(camera_stop):
+def detectFaces(camera_stop, camera_emotion):
     try:
         print("comecooo")
         #block execution while no signal arrives
@@ -18,6 +18,9 @@ def detectFaces(camera_stop):
         # Create the haar cascade
         faceCascade1 = cv2.CascadeClassifier(cascPath1)
         faceCascade2 = cv2.CascadeClassifier(cascPath2)
+        
+        consecutive_frontals=0
+        consecutive_profiles=0
 
         # initialize the camera and grab a reference to the raw camera capture
         camera = PiCamera()
@@ -48,6 +51,13 @@ def detectFaces(camera_stop):
                 frontals=len(faces1)
                 if (frontals>0):
                     print "Found {0} FRONTAL(S)!".format(frontals)
+                    consecutive_frontals+=1
+                    if (consecutive_frontals>5):
+                        print("IMMA ATTENTION MANIAC")
+                        consecutive_frontals=0
+                        camera_emotion.put("joy")
+                else:
+                    consecutive_frontals=0
 
                 # Detect profile faces in the image
                 faces2 = faceCascade2.detectMultiScale(

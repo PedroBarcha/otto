@@ -82,7 +82,7 @@ def record(data_shared, flag_shared):
     waveFile.close()
 
 
-def detectVoice(silence_threshold,coco):
+def detectVoice(silence_threshold, camera_emotion):
     #set threads
     data_shared = Queue.Queue()
     flag_shared = Queue.Queue()
@@ -96,19 +96,26 @@ def detectVoice(silence_threshold,coco):
 
     try:
         #keep checking if the silence threshold is exceeded (some on is talking to otto). when it happens, start recording (in a new thread)
-        print ("Microphone ready!"+str(coco.empty()))
-        while (1):
+        print ("Microphone ready!")
+        while (camera_emotion.empty()):
             if(audioop.rms(stream.read(CHUNK,exception_on_overflow =False),2)>silence_threshold):
                 user_speaking=1
                 stream.stop_stream()
                 stream.close()
                 audio.terminate()
                 break
+        
+        #if the camera got an emotion, stop the recording
+        if (not camera_emotion.empty()):
+            stream.stop_stream()
+            stream.close()
+            audio.terminate()
+            return
 
-    	#record while there is no silence for more than allowed_silence_time
         myThread=threading.Thread(target=record, args=(data_shared,flag_shared))
         myThread.start()
 
+    	#record while there is no silence for more than allowed_silence_time
     	user_speaking=1
     	print("RECORDING")
         while(user_speaking):
@@ -128,6 +135,10 @@ def detectVoice(silence_threshold,coco):
 
         #wait for recording file to be saved
         myThread.join()
+        
+        #recording has top priority. if camera got any emotion, this prevents emotion conflicts
+        if (not camera_emotion.empty()):
+            camera_emotion.get()
 
     except(KeyboardInterrupt, SystemExit):
         print("Wrapping recording threads up...")
