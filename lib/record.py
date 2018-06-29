@@ -82,7 +82,7 @@ def record(data_shared, flag_shared):
     waveFile.close()
 
 
-def detectVoice(silence_threshold):
+def detectVoice(silence_threshold,coco):
     #set threads
     data_shared = Queue.Queue()
     flag_shared = Queue.Queue()
@@ -94,17 +94,17 @@ def detectVoice(silence_threshold):
 		                rate=RATE, input=True,
 		                frames_per_buffer=CHUNK)
 
-    #keep checking if the silence threshold is exceeded (some on is talking to otto). when it happens, start recording (in a new thread)
-    print ("Microphone ready!")
-    while (1):
-        if(audioop.rms(stream.read(CHUNK,exception_on_overflow =False),2)>silence_threshold):
-            user_speaking=1
-            stream.stop_stream()
-            stream.close()
-            audio.terminate()
-            break
-
     try:
+        #keep checking if the silence threshold is exceeded (some on is talking to otto). when it happens, start recording (in a new thread)
+        print ("Microphone ready!"+str(coco.empty()))
+        while (1):
+            if(audioop.rms(stream.read(CHUNK,exception_on_overflow =False),2)>silence_threshold):
+                user_speaking=1
+                stream.stop_stream()
+                stream.close()
+                audio.terminate()
+                break
+
     	#record while there is no silence for more than allowed_silence_time
         myThread=threading.Thread(target=record, args=(data_shared,flag_shared))
         myThread.start()
@@ -131,6 +131,7 @@ def detectVoice(silence_threshold):
 
     except(KeyboardInterrupt, SystemExit):
         print("Wrapping recording threads up...")
-        flag_shared.put(False)
+        flag_shared.put(0)
+        #myThread.join()
         sys.exit()
 

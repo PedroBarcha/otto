@@ -21,14 +21,12 @@ def detectFaces(camera_stop):
 
         # initialize the camera and grab a reference to the raw camera capture
         camera = PiCamera()
-        camera.resolution = (160, 120)
+        camera.resolution = (160, 128)
         camera.framerate = 32
-        rawCapture = PiRGBArray(camera, size=(160, 120))
+        rawCapture = PiRGBArray(camera, size=(160, 128))
 
         # allow the camera to warmup
         time.sleep(0.1)
-        lastTime = time.time()*1000.0
-
 
         for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
             print ("coe!")
@@ -50,7 +48,6 @@ def detectFaces(camera_stop):
                 frontals=len(faces1)
                 if (frontals>0):
                     print "Found {0} FRONTAL(S)!".format(frontals)
-                    #lastTime = time.time()*1000.0
 
                 # Detect profile faces in the image
                 faces2 = faceCascade2.detectMultiScale(
@@ -63,15 +60,20 @@ def detectFaces(camera_stop):
                 profiles=len(faces2)
                 if (profiles>0):
                     print "Found {0} PROFILE(S)!".format(profiles)
-                    #lastTime = time.time()*1000.0
 
-                rawCapture.truncate(0)
+                #rawCapture.truncate()
+                
         
             # stop signal received
             else:
-                camera_stop.get() #get the stop signal off the queue
-                print("ta pra cabaaa")
-                camera_stop.get() #block execution
+                stop=camera_stop.get() #get the stop signal off the queue
+                print(str(stop)+"ta pra cabaaa")
+                if (stop==False):
+                    camera_stop.get() #block execution
+                else:
+                    return
+            rawCapture.truncate(0)
+            
                 
     #terminate thread when keyboard interrupts occur
     except(KeyboardInterrupt, SystemExit):

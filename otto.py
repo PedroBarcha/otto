@@ -20,19 +20,22 @@ eyes_thr.start()
 
 #set camera thread
 #NOTE: -this thread on/off is triggered with a camera_stop.put(bool)
-#camera_stop=Queue.Queue()
-#camera_thr=threading.Thread(target=camera.detectFaces, args=(camera_stop, ))
-#camera_thr.start()
+camera_stop=Queue.Queue()
+camera_thr=threading.Thread(target=camera.detectFaces, args=(camera_stop, ))
+camera_thr.start()
+
+coco=Queue.Queue()
+coco.put(True)
 
 while (1):
     try:
         #start looking for faces
-        #camera_stop.put(False)
+        camera_stop.put(False)
                 
         #record what the user has to say and save to ./records/user-record.wav
-        record.detectVoice(silence_threshold)
+        record.detectVoice(silence_threshold,coco)
         
-        #camera_stop.put(True)
+        camera_stop.put(False)
 
         #send the audio to the ibm speech-to-text api and get their json response
         transcript=speech_to_text.stt()
@@ -58,5 +61,7 @@ while (1):
     except(KeyboardInterrupt, SystemExit):
         print("Wrapping eyes thread up...")
         eyes_on.put(False)
-        eyes_thr.join()     
+        camera_stop.put(True)
+        eyes_thr.join()
+        camera_thr.join()
         sys.exit()
