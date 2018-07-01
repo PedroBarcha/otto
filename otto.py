@@ -1,7 +1,7 @@
 ###############################################################################
 #Otto is an emotional robot that answers accordingly to what you say to her
 ###############################################################################
-from lib import record, speech_to_text, tone_analyzer, eyes, camera, output
+from lib import record, speech_to_text, tone_analyzer, eyes, camera, output , toArd
 import threading, Queue
 import sys
 
@@ -22,8 +22,8 @@ eyes_thr.start()
 #NOTE: -this thread on/off is triggered with a camera_stop.put(bool)
 camera_stop=Queue.Queue()
 camera_emotion=Queue.Queue()
-camera_thr=threading.Thread(target=camera.detectFaces, args=(camera_stop, camera_emotion))
-camera_thr.start()
+#camera_thr=threading.Thread(target=camera.detectFaces, args=(camera_stop, camera_emotion))
+#camera_thr.start()
 
 
 
@@ -51,7 +51,8 @@ while (1):
 
             #use otto-lexicon and ibm tone-analyzer to get the emotion
             emotion=tone_analyzer.getPredominantEmotion(transcript)
-
+        
+        
 	#otto reacts with his eyes
 	eyes_emotion.put(emotion)
 	eyes_on.put(True)

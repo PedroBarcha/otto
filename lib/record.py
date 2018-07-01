@@ -143,6 +143,5 @@ def detectVoice(silence_threshold, camera_emotion):
     except(KeyboardInterrupt, SystemExit):
         print("Wrapping recording threads up...")
         flag_shared.put(0)
-        #myThread.join()
         sys.exit()
 

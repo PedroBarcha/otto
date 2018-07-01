@@ -11,7 +11,6 @@ cascPath2= '/home/pi/Desktop/otto/face-models/haarcascade_profileface.xml'
 
 def detectFaces(camera_stop, camera_emotion):
     try:
-        print("comecooo")
         #block execution while no signal arrives
         camera_stop.get()
         
@@ -32,7 +31,7 @@ def detectFaces(camera_stop, camera_emotion):
         time.sleep(0.1)
 
         for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-            print ("coe!")
+            print ("camera recording!")
             # capture frames from the camera until it gets a stop signal
             if (camera_stop.empty()):
                 # grab the raw NumPy array representing the image, then initialize the timestamp
@@ -53,7 +52,7 @@ def detectFaces(camera_stop, camera_emotion):
                     print "Found {0} FRONTAL(S)!".format(frontals)
                     consecutive_frontals+=1
                     if (consecutive_frontals>5):
-                        print("IMMA ATTENTION MANIAC")
+                        print("Your gave attention to otto!")
                         consecutive_frontals=0
                         camera_emotion.put("joy")
                 else:
@@ -70,24 +69,21 @@ def detectFaces(camera_stop, camera_emotion):
                 profiles=len(faces2)
                 if (profiles>0):
                     print "Found {0} PROFILE(S)!".format(profiles)
-
-                #rawCapture.truncate()
                 
         
             # stop signal received
             else:
                 stop=camera_stop.get() #get the stop signal off the queue
-                print(str(stop)+"ta pra cabaaa")
                 if (stop==False):
                     camera_stop.get() #block execution
                 else:
                     return
+                
             rawCapture.truncate(0)
             
                 
     #terminate thread when keyboard interrupts occur
     except(KeyboardInterrupt, SystemExit):
         print("Wrapping camera thread up...")
-        #rawCapture.truncate(0)
         sys.exit()
 
