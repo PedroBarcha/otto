@@ -22,10 +22,8 @@ eyes_thr.start()
 #NOTE: -this thread on/off is triggered with a camera_stop.put(bool)
 camera_stop=Queue.Queue()
 camera_emotion=Queue.Queue()
-#camera_thr=threading.Thread(target=camera.detectFaces, args=(camera_stop, camera_emotion))
-#camera_thr.start()
-
-
+camera_thr=threading.Thread(target=camera.detectFaces, args=(camera_stop, camera_emotion))
+camera_thr.start()
 
 while (1):
     try:
@@ -43,10 +41,18 @@ while (1):
 
         #if the microphone got emotion
         else:
+            #set loading eyes
+            eyes_emotion.put("thinking")
+            eyes_on.put(True)
+            
             #send the audio to the ibm speech-to-text api and get their json response
             transcript=speech_to_text.stt()
+            
             #if noise was recorded, record again
-            if (transcript == False): 
+            if (transcript == False):
+            	   #get back to default eyes state
+                eyes_emotion.put("neutral")
+                eyes_on.put(True)
                 continue
 
             #use otto-lexicon and ibm tone-analyzer to get the emotion
@@ -57,8 +63,8 @@ while (1):
 	eyes_emotion.put(emotion)
 	eyes_on.put(True)
 
-        #otto's sound reaction
-        output.sound(emotion)
+        #otto's reaction to the emotion
+        output.react(emotion)
 
 	#get back to default eyes state
 	eyes_emotion.put("neutral")

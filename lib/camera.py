@@ -29,6 +29,8 @@ def detectFaces(camera_stop, camera_emotion):
 
         # allow the camera to warmup
         time.sleep(0.1)
+        ignoring_toleration=60 #if you dont look at otto for this time he will get so angry at you! 
+        t_start=time.time()
 
         for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
             print ("camera recording!")
@@ -47,6 +49,8 @@ def detectFaces(camera_stop, camera_emotion):
                 minSize=(30, 30),
                 flags = cv2.cv.CV_HAAR_SCALE_IMAGE
                 )
+                
+                #if you look at otto, he gets happy
                 frontals=len(faces1)
                 if (frontals>0):
                     print "Found {0} FRONTAL(S)!".format(frontals)
@@ -54,7 +58,8 @@ def detectFaces(camera_stop, camera_emotion):
                     if (consecutive_frontals>5):
                         print("Your gave attention to otto!")
                         consecutive_frontals=0
-                        camera_emotion.put("joy")
+                        if (camera_emotion.empty()):
+                            camera_emotion.put("joy")
                 else:
                     consecutive_frontals=0
 
@@ -66,16 +71,36 @@ def detectFaces(camera_stop, camera_emotion):
                 minSize=(30, 30),
                 flags = cv2.cv.CV_HAAR_SCALE_IMAGE
                 )
+                
+                #if you turn your face to otto, he gets angry
                 profiles=len(faces2)
                 if (profiles>0):
-                    print "Found {0} PROFILE(S)!".format(profiles)
-                
+                    print "Found {0} PROFILES(S)!".format(profiles)
+                    consecutive_profiles+=1
+                    if (consecutive_profiles>3):
+                        print("Your turned your face to otto!")
+                        consecutive_profiles=0
+                        if (camera_emotion.empty()):
+                            camera_emotion.put("anger")
+                else:
+                    consecutive_profiles=0
+                    
+                #if you dont look at otto for too long he will get so angry at you!
+                if (((time.time()-t_start)>ignoring_toleration) and camera_emotion.empty()):
+                    camera_emotion.put("sadness")    
         
-            # stop signal received
+            #stop signal received
             else:
                 stop=camera_stop.get() #get the stop signal off the queue
+                
+                #start recording again
                 if (stop==False):
                     camera_stop.get() #block execution
+                    consecutive_frontals=0
+                    consecutive_profiles=0
+                    t_start=time.time()
+                
+                #otto is retired
                 else:
                     return
                 
