@@ -1,4 +1,4 @@
-## :octopus: Otto The Emotional Toy
+## :octopus: Otto, The Emotional Toy
 Ottos is a toy/robot (made with Raspbeey Pi and Arduino) that expresses emotions (anger, sadness, joy, fear and disgust) according to how the user interacts with her. Interactions can be via:
 1. Audio: you can say anything you want to Otto! She will understand it and react accordingly.
 2. Video: if you give Otto attention, she will be happy, otherwise she will be very sad 🙇.
